@@ -27,7 +27,7 @@
 #include "CompressionSuite.h"
 
 
-const unsigned int kYappyBlockSize = 4096;
+const unsigned int kYappyBlockSize = (1 << 16);
 
 
 bool CompressionSuite::Compress(const char* inputFileName, const Algorithm algorithm, const char* outputFileName, CompressionStats* pStats)
@@ -121,16 +121,16 @@ bool CompressionSuite::Compress(const char* inputFileName, const Algorithm algor
 		Timer timer;
 
 		timer.delta();
-		for (int offset=0; offset<uncompressedDataSize; offset+=kYappyBlockSize, pSrcData+=kYappyBlockSize)
+		//for (int offset=0; offset<uncompressedDataSize; offset+=kYappyBlockSize, pSrcData+=kYappyBlockSize)
 		{
-			unsigned int blockSize = ((uncompressedDataSize-offset) >= kYappyBlockSize) ? kYappyBlockSize : uncompressedDataSize-offset;
+			unsigned int blockSize = uncompressedDataSize;//((uncompressedDataSize-offset) >= kYappyBlockSize) ? kYappyBlockSize : uncompressedDataSize-offset;
 			
-			unsigned short* pCompressedBlockSize = (unsigned short*)pDstData;
-			pDstData += sizeof(unsigned short);
+			unsigned int* pCompressedBlockSize = (unsigned int*)pDstData;
+			pDstData += sizeof(unsigned int);
 
 			unsigned char* pBlockEnd = Yappy_Compress(pSrcData, pDstData, blockSize);
 			unsigned int compressedBlockSize = pBlockEnd - pDstData;
-			*pCompressedBlockSize = static_cast<unsigned short>(compressedBlockSize);
+			*pCompressedBlockSize = static_cast<unsigned int>(compressedBlockSize);
 
 			pDstData = pBlockEnd;
 		}
@@ -341,8 +341,8 @@ bool CompressionSuite::Decompressor::Decompress(char* pOutputBuffer, const int o
 
 		while (pSrcData < pSrcDataEnd)
 		{
-			unsigned short compressedBlockSize = *reinterpret_cast<unsigned short*>(pSrcData);
-			pSrcData += sizeof(unsigned short);
+			unsigned int compressedBlockSize = *reinterpret_cast<unsigned int*>(pSrcData);
+			pSrcData += sizeof(unsigned int);
 
 			unsigned char* pSrcBlockEnd = pSrcData + compressedBlockSize;
 			unsigned char* pDstBlockEnd = Yappy_UnCompress(pSrcData, pSrcBlockEnd, pDstData);
